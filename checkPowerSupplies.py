@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pprint import pprint
 import argparse
 import time
+import sys
 
 # Generic function to run queries
 def grpcQuery(args, dataset, pathElts):
@@ -119,4 +120,4 @@ if __name__ == "__main__":
     exit_code = main(args)
     duration = time.time() - start
     print(f"\nCompleted in {round(duration, 2)} seconds")
-    exit(exit_code)
+    sys.exit(exit_code)
