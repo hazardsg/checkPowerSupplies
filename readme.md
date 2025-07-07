@@ -16,7 +16,7 @@ This Python script queries Arista CloudVision-as-a-Service (CVaaS) via gRPC to r
 
 ## 📦 Requirements
 
-- Python 3.7+
+- Python 3.9.6+
 - Arista CloudVision gRPC client (`cloudvision` Python package)
 - Access to CVaaS API credentials (token or cert/key)
 
