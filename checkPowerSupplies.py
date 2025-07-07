@@ -108,7 +108,7 @@ def main(args):
                     'hostname': info['hostname'],
                     'error': str(e)
                 }
-
+    # Data is ready to be viewed or sent to any other platforms as needed.
     pprint(results)
     return 0
  

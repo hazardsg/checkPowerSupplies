@@ -82,11 +82,7 @@ def main(args):
         # Make sure the device is a physical device and not a virtual one.
         if deviceInfo['deviceType'] == 'EOS' and ('CCS' in deviceInfo['modelName'] or 'DCS' in deviceInfo['modelName']):
             results[device] = {'hostname': deviceInfo['hostname']}
-            # print(device, deviceInfo['hostname'])
             results[device]['powerSupplies'] = getPowerSupplyStatus(args, device)
-
-
-    
 
     pprint(results)
     return 0
@@ -94,7 +90,6 @@ def main(args):
  
 if __name__ == "__main__":
     args = parse_args()
-    # exit(main(args))
     start = time.time()
     exit_code = main(args)
     duration = time.time() - start
