@@ -1,0 +1,102 @@
+from cloudvision.Connector.grpc_client import GRPCClient, create_query
+from pprint import pprint
+import argparse
+import time
+
+def grpcQuery(args, dataset, pathElts):
+    results = {}
+    query = [
+       create_query([(pathElts, [])], dataset)
+   ]
+
+    with GRPCClient(args.apiserver, certs=args.certFile, key=args.keyFile,
+            ca=args.caFile, token=args.tokenFile) as client:
+        for batch in client.get(query):
+            for notif in batch["notifications"]:
+                for key, value in notif["updates"].items():
+                    results[key] = value
+    return results
+
+def getPowerSupplyStatus(args, device):
+    dataset = device
+    results = {}
+    # Setup query to figure out how many power supplies are present in the device.
+    pathElts = [
+        "Sysdb",
+        "environment",
+        "archer",
+        "power",
+        "status",
+        "powerManager",
+        "powerSupplies",
+    ]
+
+    powerQuery = grpcQuery(args, dataset, pathElts)
+    
+    for powerSupply in powerQuery.keys():
+        # print(powerSupply)
+        # Setup query to get the status of each power supply.
+        pathElts = [
+            "Sysdb",
+            "environment",
+            "archer",
+            "power",
+            "status",
+            "powerManager",
+            "powerSupplies",
+            powerSupply
+        ]
+
+        PowerSupplyQuery = grpcQuery(args, dataset, pathElts)
+        results[powerSupply] = {
+            'name': PowerSupplyQuery['name'],
+            'state': PowerSupplyQuery['state']['Name'],
+            'capacity': PowerSupplyQuery['capacity']['value'],
+            'outputPower': PowerSupplyQuery['outputPower']['value']
+        }
+    return results
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Query DatasetInfo from CVaaS")
+    parser.add_argument('--apiserver', required=True, help='API server (e.g., api.arista.io:443)')
+    parser.add_argument('--tokenFile', help='Path to token file')
+    parser.add_argument('--certFile', help='Client certificate (optional)')
+    parser.add_argument('--keyFile', help='Private key (optional)')
+    parser.add_argument('--caFile', help='CA cert (optional)')
+    return parser.parse_args()
+
+def main(args):
+    # Dictionary to hold final results.
+    results = {}    
+
+    # Get list of active devices in CVaaS to check Power supply status.
+    pathElts = [
+        "DatasetInfo",
+        "Devices"    
+    ]
+    dataset = "analytics"   
+
+    deviceQuery = grpcQuery(args, dataset, pathElts)
+    
+    for  device, deviceInfo in deviceQuery.items():
+        # Make sure the device is a physical device and not a virtual one.
+        if deviceInfo['deviceType'] == 'EOS' and ('CCS' in deviceInfo['modelName'] or 'DCS' in deviceInfo['modelName']):
+            results[device] = {'hostname': deviceInfo['hostname']}
+            # print(device, deviceInfo['hostname'])
+            results[device]['powerSupplies'] = getPowerSupplyStatus(args, device)
+
+
+    
+
+    pprint(results)
+    return 0
+ 
+ 
+if __name__ == "__main__":
+    args = parse_args()
+    # exit(main(args))
+    start = time.time()
+    exit_code = main(args)
+    duration = time.time() - start
+    print(f"\nCompleted in {round(duration, 2)} seconds")
+    exit(exit_code)
